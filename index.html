@@ -95,20 +95,81 @@
       color: white;
     }
     #warning {
-      position: absolute;   /* fix it relative to the viewport */
-      bottom: 20px;      /* distance from bottom */
-      right: 20px;       /* distance from right */
+      position: absolute;  
+      bottom: 20px; 
+      right: 20px;
       background: #363636;
       padding: 10px;
     }
+    @media (orientation: portrait)
+    {
+      #app {
+        min-width: 95%;
+      }
+      button {
+        min-width: 100%;
+        margin: 10px 5px;
+        padding: 30px 20px;
+        font-size: 32px;
+        border: none;
+        border-radius: 8px;
+        background: var(--button-bg);
+        color: white;
+        cursor: pointer;
+      }
+      #themeToggle {
+        float: right;
+        min-width: 0%;
+        margin: -10px -10px 10px 0;
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--text);
+        padding: 5px 10px;
+        font-size: 32px;
+        border-radius: 5px;
+      }
+      h2 {
+        font-size: 48px;
+      }
+      h3 {
+        font-size: 40px;
+      }
+      p{
+        font-size: 35px;
+      }
+      input, select {
+        padding: 10px;
+        font-size: 40px;
+        width: 100%;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        border: 1px solid #555;
+        background: #222;
+        color: var(--text);
+      }
+      label {
+        font-size: 40px;
+      }
+      .answer-feedback { 
+        margin: 10px 0; padding: 10px; border-radius: 8px; 
+        font-size: 35px;
+      }
+      #warning {
+        position: absolute;
+        bottom: 2%;
+        right: 5%;
+        left: 5%;
+        padding: 10px;
+        min-width: 90%;
+      }
+    }
   </style>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 </head>
 <body>
   <div id="app">
     <button id="themeToggle" onclick="toggleTheme()">Light Mode</button>
 
-    <div id = "warning">(Warning, the base function of this app works, but there's some buggy aspects)</div>
+    <p id = "warning">If you would like to see what updates I've made, check the commits to the repo</p>
     <!-- Subject Menu -->
     <div id="subjectMenu"></div>
 
@@ -119,25 +180,25 @@
       <select id="setSelect"></select>
       <label>Mode:</label>
       <select id="modeSelect">
+        <option value="flash">Flashcards</option>
         <option value="test">Test</option>
-        <option value="flash">Flashcards (WARNING: WORKS BUT HAS BUGGED UI)</option>
       </select>
       <label>Order:</label>
       <select id="orderSelect">
-        <option value="random">Random</option>
         <option value="ordered">Ordered</option>
+        <option value="random">Random</option>
       </select>
       <label>Structure:</label>
       <select id="structureSelect" onchange="toggleBothOptions()">
-        <option value="both">Both</option>
         <option value="symbol">Ask Questions</option>
         <option value="name">Ask Answers</option>
+        <option value="both">Both</option>
       </select>
-      <div id="bothOptions">
+      <div id="bothOptions", class="hidden">
         <label>If Both:</label>
         <select id="bothOrderSelect">
-          <option value="namesFirst">Answers then Questions</option>
           <option value="symbolsFirst">Questions then Answers</option>
+          <option value="namesFirst">Answers then Questions</option>
         </select>
       </div>
       <button onclick="beginFromSetup()">Start</button>
@@ -249,7 +310,12 @@
       document.getElementById("userAnswer").value="";
     }
     function showFlashAnswer(){document.getElementById("flashWait").classList.add("hidden");document.getElementById("flashAnswer").classList.remove("hidden");document.getElementById("flashText").textContent=currentAnswer;}
-    function nextFlash(){index++;updateProgress();nextQuestion(structure);}
+    function nextFlash(){
+      index++;
+      updateProgress();
+      document.getElementById("flashAnswer").classList.add("hidden");
+      nextQuestion(structure);
+    }
     function updateProgress(){document.getElementById("progressFill").style.width=Math.floor((index/shuffled.length)*100)+"%";}
     function showResults(){
       document.getElementById("progressBar").classList.add("hidden");
