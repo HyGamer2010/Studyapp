@@ -16,15 +16,6 @@
       --wrong-bg: #c62828;
       --excludedRange: #8d8d8d;
     }
-    body.light {
-      --bg: #f4f4f4;
-      --card: #fff;
-      --text: #333;
-      --progress-bg: #eee;
-      --progress-fill: #00796b;
-      --correct-bg: #c8e6c9;
-      --wrong-bg: #ffcdd2;
-    }
     body {
       font-family: Arial, sans-serif;
       background: var(--bg);
@@ -52,6 +43,7 @@
       color: white;
       cursor: pointer;
     }
+
     button:hover { background: var(--button-bg-hover); }
     input, select {
       padding: 10px;
@@ -107,6 +99,16 @@
       font-size: 14px;
       border-radius: 5px;
     }
+    #changelogbutton {
+      float: right;
+      margin: -10px -10px 10px 0;
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--text);
+      padding: 5px 10px;
+      font-size: 16px;
+      border-radius: 5px;
+    }
     #themeToggle:hover {
       background: var(--button-bg);
       border-color: var(--button-bg);
@@ -118,7 +120,15 @@
       right: 20px;
       background: #363636;
       padding: 10px;
+      max-width: 50%;
     }
+    #email {
+      cursor: pointer;
+      color: rgb(74, 74, 255);
+      text-decoration: underline;
+    }
+
+    
     @media (orientation: portrait)
     {
       #app {
@@ -143,6 +153,16 @@
         color: var(--text);
         border: 1px solid var(--text);
         padding: 5px 10px;
+        font-size: 32px;
+        border-radius: 5px;
+      }
+      #changelogbutton {
+        float: right;
+        min-width: 0%;
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--text);
+        padding: 10px 10px;
         font-size: 32px;
         border-radius: 5px;
       }
@@ -180,16 +200,39 @@
         padding: 10px;
         min-width: 90%;
       }
+      td, th {
+        font-size: 40px;
+      }
     }
   </style>
 </head>
 <body>
   <div id="app">
-    <button id="themeToggle" onclick="toggleTheme()">Light Mode</button>
+    <button onclick="loadNext('changelog', 'subjectMenu')" id="changelogbutton">Changelog</button>
 
-    <p id = "warning">If you would like to see what updates I've made, check the commits to the <a href = "https://github.com/HyGamer2010/Studyapp" target="_blank">repository</a></p>
+    <p id = "warning">If you would like to view the source code, you can view it on the <a href = "https://github.com/HyGamer2010/Studyapp" target="_blank">Github repository</a>. And if you have any recommendations for what I should add, like sets of cards or subjects, email me at <span onclick="writeToClipboard('email')" id="email">sonict2010@gmail.com</span></p>
     <!-- Subject Menu -->
     <div id="subjectMenu"></div>
+
+    <div id="changelog" class = "hidden">
+      <h2>Changelog</h2>
+      <h3>9/18/25</h3>
+      <ul>
+        <li>Added the advanced menu option and the ranges menu found inside</li>
+        <li>Fixed some bugs in the gui</li>
+        <li>Replaced dark mode toggle with changelog</li>
+        <li>Added end button</li>
+        <li>Changed the link at the bottom right</li>
+      </ul>
+      <h3>9/17/25</h3>
+      <ul>
+        <li>Moved the project from ChemStudy to Studyapp</li>
+        <li>Added Math 3 Unit 2 card set</li>
+        <li>Added all US Presidents to AP US History Presidents card set</li>
+        <li>Made the gui much more mobile friendly</li>
+      </ul>
+      <button onclick="loadNext('subjectMenu', 'changelog')">Back</button>
+    </div>
 
     <!-- Setup GUI -->
     <div id="setup" class="hidden">
@@ -221,6 +264,7 @@
       </div>
       <button onclick="loadNext('advanced', 'setup')">Advanced</button>
       <button onclick="beginFromSetup()">Start</button>
+      <button onclick="loadNext('subjectMenu', 'setup')">Back</button>
     </div>
 
     <div id="advanced" class="hidden">
@@ -259,6 +303,7 @@
     <div id="feedback" class="hidden"></div>
     <div id="progressBar" class="hidden"><div id="progressFill"></div></div>
     <div id="results" class="hidden"></div>
+    <button onclick="end()" class="hidden" id="endTest">End</button>
   </div>
 
   <script>
@@ -279,6 +324,13 @@
       const data = await res.json();
       subjects = data.Subjects;
       loadSubjectMenu();
+    }
+
+    function writeToClipboard(value)
+    {
+      navigator.clipboard.writeText(document.getElementById(value).innerText);
+
+      alert("Copied text: " + document.getElementById(value).innerText)
     }
 
     function loadSubjectMenu()
@@ -310,6 +362,7 @@
       document.getElementById("warning").classList.add("hidden");
       document.getElementById("setup").classList.remove("hidden");
       populateCards();
+      ranges = [[1, elements.length]];
     }
 
     function toggleBothOptions() {
@@ -326,13 +379,13 @@
 
     function loadRangesMenu()
     {
+      ranges = [[1, elements.length]];
       editShownCards();
       loadNext("ranges", "advanced");
     }
 
     function editShownCards()
     {
-      ranges = [[1, elements.length]];
       table = document.getElementById("includedCards");
       inner = "<tr><th>Index</th><th>Question</th><th>Answer</th></tr>";
       includedElements = [];
@@ -362,6 +415,7 @@
 
     function modifyRanges(min, max, include)
     {
+      console.log("clicked")
       if(include)
       {
         includedRange = [];
@@ -391,6 +445,7 @@
         ranges.forEach(element => {
           for(i = element[0]; i < element[1] + 1; i++)
           {
+
             listOfCurrentIndexes.push(i);
           }
         });
@@ -400,7 +455,8 @@
             listOfCurrentIndexes.splice(listOfCurrentIndexes.indexOf(i), 1);
           }
         }
-        ranges = [[listOfCurrentIndexes[0], listOfCurrentIndexes[0] - 1]];
+        beginningRange = [listOfCurrentIndexes[0], listOfCurrentIndexes[0] - 1];
+        ranges = [beginningRange];
         listOfCurrentIndexes.forEach(element => {
           if(element == ranges[ranges.length - 1][1] + 1)
           {
@@ -434,7 +490,6 @@
       includedElements.forEach(element => {
         if(questionsFirst)
         {
-          console.log(element)
           question = [element.Question, element.Answer];
           questions.push(question);
         } else {
@@ -446,6 +501,7 @@
 
     // === Quiz Logic (unchanged from before, shortened for brevity) ===
     function beginStudy(type) {
+      document.getElementById("endTest").classList.remove("hidden");
       index = 0; symbolsRight = 0; namesRight = 0; wrongAnswers = [];
       shuffled = [];
       if(type === "symbol")
@@ -524,10 +580,12 @@
       document.getElementById("answerInput").classList.add("hidden");
     }
     function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-
-    // Theme toggle
-    function toggleTheme(){document.body.classList.toggle("light");document.getElementById("themeToggle").textContent=document.body.classList.contains("light")?"Dark Mode":"Light Mode";}
-
+    function end()
+    {
+      showResults();
+      document.getElementById("endTest").classList.add("hidden");
+      document.getElementById("flashWait").classList.add("hidden");
+    }
     // Init
     window.onload = () => {
       loadData();
