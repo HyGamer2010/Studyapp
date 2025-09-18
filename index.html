@@ -408,6 +408,11 @@
           }
         });
       }
+      newCount = 0;
+      ranges.forEach(element => {
+        newCount += (element[1] - element[0] + 1)
+      });
+      document.getElementById("numberOfQuestions").value = newCount;
       editShownCards();
     }
 
