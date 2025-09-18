@@ -8,12 +8,13 @@
       --bg: #121212;
       --card: #1e1e1e;
       --text: #f0f0f0;
-      --button-bg: #00796b;
-      --button-bg-hover: #004d40;
+      --button-bg: #585858;
+      --button-bg-hover: #494949;
       --progress-bg: #333;
       --progress-fill: #26a69a;
       --correct-bg: #2e7d32;
       --wrong-bg: #c62828;
+      --excludedRange: #8d8d8d;
     }
     body.light {
       --bg: #f4f4f4;
@@ -62,6 +63,22 @@
       background: #222;
       color: var(--text);
     }
+    #minRange, #maxRange {
+      width: 45%
+    }
+    .rangeButton {
+      width: 45%;
+    }
+    #addRangeButton {
+      background: var(--correct-bg)
+    }
+    #removeRangeButton {
+      background: var(--wrong-bg)
+    }
+    table, th, td {
+      border: 5px solid rgb(101, 101, 101);
+      min-width: 100%;
+    }
     body.light input, body.light select {
       background: #fff;
       border: 1px solid #ccc;
@@ -71,6 +88,7 @@
     .answer-feedback { margin: 10px 0; padding: 10px; border-radius: 8px; }
     .correct { background: var(--correct-bg); color: white; }
     .wrong { background: var(--wrong-bg); color: white; }
+    .excludedRange { color: var(--excludedRange)}
     #progressBar {
       height: 20px; background: var(--progress-bg);
       border-radius: 10px; margin: 15px 0; overflow: hidden;
@@ -169,7 +187,7 @@
   <div id="app">
     <button id="themeToggle" onclick="toggleTheme()">Light Mode</button>
 
-    <p id = "warning">If you would like to see what updates I've made, check the commits to the repo</p>
+    <p id = "warning">If you would like to see what updates I've made, check the commits to the <a href = "https://github.com/HyGamer2010/Studyapp" target="_blank">repository</a></p>
     <!-- Subject Menu -->
     <div id="subjectMenu"></div>
 
@@ -177,7 +195,7 @@
     <div id="setup" class="hidden">
       <h2>Setup Study Session</h2>
       <label>Study Set:</label>
-      <select id="setSelect"></select>
+      <select id="setSelect" onchange="populateCards()"></select>
       <label>Mode:</label>
       <select id="modeSelect">
         <option value="flash">Flashcards</option>
@@ -201,8 +219,29 @@
           <option value="namesFirst">Answers then Questions</option>
         </select>
       </div>
+      <button onclick="loadNext('advanced', 'setup')">Advanced</button>
       <button onclick="beginFromSetup()">Start</button>
     </div>
+
+    <div id="advanced" class="hidden">
+      <h2>Advanced Settings</h2>
+      <label>Max number of questions</label>
+      <input type="number" id="numberOfQuestions" placeholder="Number of questions">
+      <button onclick="loadRangesMenu()">Modify ranges</button>
+      <button onclick="loadNext('setup', 'advanced')">Back</button>
+    </div>
+
+    <div id="ranges" class="hidden">
+      <h2>Modify Ranges</h2>
+      <h3>Click on any question to change if it is included</h3>
+      <table id="includedCards"></table>
+      <input type="number" id="minRange" placeholder="Min">
+      <input type="number" id="maxRange" placeholder="Max">
+      <button id="addRangeButton" class="rangeButton" onclick="modifyRanges(document.getElementById('minRange').value, document.getElementById('maxRange').value, true)">Add Range</button>
+      <button id="removeRangeButton" class="rangeButton" onclick="modifyRanges(document.getElementById('minRange').value, document.getElementById('maxRange').value, false)">Remove Range</button>
+      <button onclick="loadNext('advanced', 'ranges')">Back</button>
+    </div>
+
 
     <!-- Quiz/Flash UI -->
     <div id="question" class="hidden"></div>
@@ -225,6 +264,8 @@
   <script>
 
     let elements = [];
+    let includedElements = [];
+    let ranges = [];
     let test = false, ordered = false, structure = "symbol", modeOrder = "symbolsFirst";
     let index = 0, shuffled = [], symbolsRight = 0, namesRight = 0, wrongAnswers = [];
     let currentQuestion, currentAnswer, currentType;
@@ -251,6 +292,12 @@
       document.getElementById("subjectMenu").innerHTML = innerHtml;
     }
 
+    function loadNext(show, hide)
+    {
+      document.getElementById(hide).classList.add("hidden");
+      document.getElementById(show).classList.remove("hidden");
+    }
+
     function chooseSubject(subject) {
       let setSelect = document.getElementById("setSelect");
       cardSets = subjects.find(subjectObj => subjectObj.Name === subject).CardSets;
@@ -258,7 +305,9 @@
           .map(s => `<option value="${s.Name}">${s.Name}</option>`).join("");
 
       document.getElementById("subjectMenu").classList.add("hidden");
+      document.getElementById("warning").classList.add("hidden");
       document.getElementById("setup").classList.remove("hidden");
+      populateCards();
     }
 
     function toggleBothOptions() {
@@ -266,25 +315,160 @@
       document.getElementById("bothOptions").classList.toggle("hidden", val !== "both");
     }
 
-    // === Setup Start ===
-    function beginFromSetup() {
+    function populateCards()
+    {
       const setName = document.getElementById("setSelect").value;
       elements = cardSets.find(set => set.Name = setName).Cards;
-      console.log(elements);
+      document.getElementById("numberOfQuestions").value = elements.length
+    }
+
+    function loadRangesMenu()
+    {
+      ranges = [[1, elements.length]];
+      editShownCards();
+      loadNext("ranges", "advanced");
+    }
+
+    function editShownCards()
+    {
+      table = document.getElementById("includedCards");
+      inner = "<tr><th>Index</th><th>Question</th><th>Answer</th></tr>";
+      includedElements = [];
+      for(i = 1; i < elements.length + 1; i++)
+      {
+        ranges.some(range => {
+          if(i >= range[0] && i <= range[1])
+          {
+            includedElements.push(elements[i - 1]);
+            return true;
+          }
+        });
+      }
+      for(i = 1; i < elements.length + 1; i++)
+      {
+        curElement = elements[i-1];
+        classTag = "";
+        included = includedElements.includes(curElement);
+        if(!included)
+        {
+          classTag = 'class="excludedRange"'
+        }
+        inner += `<tr onclick="modifyRanges(` + i + `,` + i + `,` + !included + `)"><td ` + classTag + `>` + i + `</td><td ` + classTag + `>` + curElement.Question + `</td><td ` + classTag + `>` + curElement.Answer + `</td></tr>`
+      }
+      table.innerHTML = inner;
+    }
+
+    function modifyRanges(min, max, include)
+    {
+      if(include)
+      {
+        includedRange = [];
+        ranges.forEach(element => {
+        inRange = !((element[0] > max && element[1] > max) || (element[0] < min && element[1] < min))
+          if(inRange){
+            includedRange = element;
+          }
+        });
+        if(includedRange.length == 0)
+        {
+          ranges.push([min, max]);
+        } else {
+          ranges.splice(ranges.indexOf(includedRange), 1);
+          if(includedRange[1] < max)
+          {
+            includedRange[1] = max;
+          }
+          if(includedRange[0] > min)
+          {
+            includedRange[0] = min;
+          }
+          ranges.push(includedRange)
+        }
+      } else {
+        listOfCurrentIndexes = [];
+        ranges.forEach(element => {
+          for(i = element[0]; i < element[1] + 1; i++)
+          {
+            listOfCurrentIndexes.push(i);
+          }
+        });
+        for (i = parseInt(min); i <= max; i++) {
+          if(listOfCurrentIndexes.includes(i))
+          {
+            listOfCurrentIndexes.splice(listOfCurrentIndexes.indexOf(i), 1);
+          }
+        }
+        ranges = [[listOfCurrentIndexes[0], listOfCurrentIndexes[0] - 1]];
+        listOfCurrentIndexes.forEach(element => {
+          if(element == ranges[ranges.length - 1][1] + 1)
+          {
+            ranges[ranges.length - 1][1] = element;
+          } else {
+            ranges.push([element, element]);
+          }
+        });
+      }
+      editShownCards();
+    }
+
+    // === Setup Start ===
+    function beginFromSetup() {
       test = document.getElementById("modeSelect").value === "test";
       ordered = document.getElementById("orderSelect").value === "ordered";
       structure = document.getElementById("structureSelect").value;
-      if (structure === "both") {
-        modeOrder = document.getElementById("bothOrderSelect").value;
-      }
       document.getElementById("setup").classList.add("hidden");
-      beginStudy(structure === "both" ? (modeOrder === "symbolsFirst" ? "symbol" : "name") : structure);
+      beginStudy(structure);
+    }
+
+    function generateQuestions(questionsFirst)
+    {
+      questions = [];
+      includedElements.forEach(element => {
+        if(questionsFirst)
+        {
+          console.log(element)
+          question = [element.Question, element.Answer];
+          questions.push(question);
+        } else {
+          questions.push([element.Answer, element.Question]);
+        }
+      });
+      return questions;
     }
 
     // === Quiz Logic (unchanged from before, shortened for brevity) ===
     function beginStudy(type) {
       index = 0; symbolsRight = 0; namesRight = 0; wrongAnswers = [];
-      shuffled = ordered ? elements.slice() : shuffle(elements.slice());
+      shuffled = [];
+      if(type === "symbol")
+      {
+        shuffled = generateQuestions(true)
+      } else if(type === "name")
+      {
+        shuffled = generateQuestions(false)
+      } else {
+        modeOrder = document.getElementById("bothOrderSelect").value;
+        if(modeOrder == "symbolsFirst") {
+          shuffled = generateQuestions(true)
+          shuffled.push(generateQuestions(false));
+        } else {
+          shuffled = generateQuestions(false)
+          shuffled.push(generateQuestions(true));
+        }
+      }
+      length = shuffled.length;
+      count = length - parseInt(document.getElementById("numberOfQuestions").value)
+      for(i = 0; i < count; i++)
+      {
+        console.log(i)
+        shuffled.splice(Math.floor(Math.random() * (shuffled.length - 1)), 1);
+      }
+      if(!ordered)
+      {
+        shuffled = shuffle(shuffled.slice());
+      }
+      console.log(shuffled.length);
+      //shuffled = ordered ? includedElements.slice() : shuffle(includedElements.slice());
       document.getElementById("progressBar").classList.remove("hidden");
       updateProgress();
       nextQuestion(type);
@@ -292,7 +476,7 @@
     function nextQuestion(type) {
       if (index >= shuffled.length) { showResults(); return; }
       const el = shuffled[index]; currentType = type;
-      [currentQuestion, currentAnswer] = type==="symbol"?[el.Question,el.Answer]:[el.Answer,el.Question];
+      [currentQuestion, currentAnswer] = el;
       document.getElementById("question").classList.remove("hidden");
       document.getElementById("question").innerHTML = `<h3>${currentQuestion}:</h3>`;
       if (test) { document.getElementById("answerInput").classList.remove("hidden"); document.getElementById("userAnswer").focus();}
