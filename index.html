@@ -283,6 +283,8 @@
 
     function loadSubjectMenu()
     {
+      document.getElementById("results").classList.add("hidden");
+      document.getElementById("subjectMenu").classList.remove("hidden");
       innerHtml = `
         <h2>Select a Subject</h2>
       `
@@ -324,13 +326,13 @@
 
     function loadRangesMenu()
     {
-      ranges = [[1, elements.length]];
       editShownCards();
       loadNext("ranges", "advanced");
     }
 
     function editShownCards()
     {
+      ranges = [[1, elements.length]];
       table = document.getElementById("includedCards");
       inner = "<tr><th>Index</th><th>Question</th><th>Answer</th></tr>";
       includedElements = [];
@@ -418,6 +420,7 @@
 
     // === Setup Start ===
     function beginFromSetup() {
+      editShownCards();
       test = document.getElementById("modeSelect").value === "test";
       ordered = document.getElementById("orderSelect").value === "ordered";
       structure = document.getElementById("structureSelect").value;
@@ -472,7 +475,6 @@
       {
         shuffled = shuffle(shuffled.slice());
       }
-      console.log(shuffled.length);
       //shuffled = ordered ? includedElements.slice() : shuffle(includedElements.slice());
       document.getElementById("progressBar").classList.remove("hidden");
       updateProgress();
@@ -510,10 +512,16 @@
       document.getElementById("progressBar").classList.add("hidden");
       let total=symbolsRight+namesRight+wrongAnswers.length,correct=symbolsRight+namesRight;
       let percent=Math.round((correct/total)*100),grade=percent>=90?"A":percent>=80?"B":percent>=70?"C":percent>=60?"D":"F";
-      let html=`<h2>Results</h2><p>Score: ${correct}/${total} (${percent}%) → Grade: ${grade}</p>`;
-      if(test&&wrongAnswers.length>0){html+="<h3>Wrong Answers:</h3>"+wrongAnswers.map(w=>`<p><b>${w.question}</b>: Correct=${w.answer}, You=${w.wrong}</p>`).join("");}
+      html = "";
+      if(test&&wrongAnswers.length>0){
+        html = `<h2>Results</h2><p>Score: ${correct}/${total} (${percent}%) → Grade: ${grade}</p>`;
+        html+="<h3>Wrong Answers:</h3>"+wrongAnswers.map(w=>`<p><b>${w.question}</b>: Correct=${w.answer}, You=${w.wrong}</p>`).join("");
+
+      }
       html+=`<button onclick="loadSubjectMenu()">Main Menu</button><button onclick="document.getElementById('setup').classList.remove('hidden');document.getElementById('results').classList.add('hidden');">Restart</button>`;
       document.getElementById("results").innerHTML=html;document.getElementById("results").classList.remove("hidden");
+      document.getElementById("question").classList.add("hidden");
+      document.getElementById("answerInput").classList.add("hidden");
     }
     function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
