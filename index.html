@@ -213,6 +213,7 @@
     <p id = "warning">If you would like to view the source code, you can view it on the <a href = "https://github.com/HyGamer2010/Studyapp" target="_blank">Github repository</a>. And if you have any recommendations for what I should add, like sets of cards or subjects, email me at <span onclick="writeToClipboard('email')" id="email">sonict2010@gmail.com</span></p>
     <!-- Subject Menu -->
     <div id="subjectMenu"></div>
+    <div id="courseMenu" class="hidden"></div>
 
     <div id="changelog" class = "hidden">
       <h2>Changelog</h2>
@@ -223,6 +224,7 @@
         <li>Replaced dark mode toggle with changelog</li>
         <li>Added end button</li>
         <li>Changed the link at the bottom right</li>
+        <li>Added another menu for courses to organize the courses better</li>
       </ul>
       <h3>9/17/25</h3>
       <ul>
@@ -316,6 +318,7 @@
     let currentQuestion, currentAnswer, currentType;
 
     let subjects = [];
+    let courses = [];
     let cardSets = [];
 
     // === Subject Menu ===
@@ -346,23 +349,43 @@
       document.getElementById("subjectMenu").innerHTML = innerHtml;
     }
 
+    function loadCourseMenu()
+    {
+      document.getElementById("courseMenu").classList.remove("hidden");
+      innerHtml = `
+        <h2>Select a Course</h2>
+      `
+      courses.forEach(element => {
+          innerHtml += `<button onclick="chooseCourse('` + element.Name + `')">` + element.Name + `</button>`
+        });
+      document.getElementById("courseMenu").innerHTML = innerHtml;
+    }
+
     function loadNext(show, hide)
     {
       document.getElementById(hide).classList.add("hidden");
       document.getElementById(show).classList.remove("hidden");
     }
 
-    function chooseSubject(subject) {
+    function chooseCourse(course) {
       let setSelect = document.getElementById("setSelect");
-      cardSets = subjects.find(subjectObj => subjectObj.Name === subject).CardSets;
+      cardSets = courses.find(courseObj => courseObj.Name === course).CardSets;
         setSelect.innerHTML = cardSets
           .map(s => `<option value="${s.Name}">${s.Name}</option>`).join("");
 
-      document.getElementById("subjectMenu").classList.add("hidden");
+      document.getElementById("courseMenu").classList.add("hidden");
       document.getElementById("warning").classList.add("hidden");
       document.getElementById("setup").classList.remove("hidden");
       populateCards();
       ranges = [[1, elements.length]];
+    }
+
+    function chooseSubject(subject) {
+      let setSelect = document.getElementById("setSelect");
+      courses = subjects.find(subObj => subObj.Name === subject).Courses;
+      document.getElementById("subjectMenu").classList.add("hidden");
+      document.getElementById("warning").classList.add("hidden");
+      loadCourseMenu();
     }
 
     function toggleBothOptions() {
