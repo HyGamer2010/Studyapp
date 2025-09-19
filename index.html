@@ -32,7 +32,10 @@
       border-radius: 15px;
       box-shadow: 0 5px 20px rgba(0,0,0,0.3);
     }
-    h2, h3 { margin-top: 0; }
+    h2, h3 { 
+      margin-top: 0; 
+      padding-right: 10%;
+    }
     button {
       margin: 10px 5px;
       padding: 10px 20px;
@@ -138,23 +141,12 @@
         min-width: 100%;
         margin: 10px 5px;
         padding: 30px 20px;
-        font-size: 32px;
+        font-size: 50px;
         border: none;
         border-radius: 8px;
         background: var(--button-bg);
         color: white;
         cursor: pointer;
-      }
-      #themeToggle {
-        float: right;
-        min-width: 0%;
-        margin: -10px -10px 10px 0;
-        background: transparent;
-        color: var(--text);
-        border: 1px solid var(--text);
-        padding: 5px 10px;
-        font-size: 32px;
-        border-radius: 5px;
       }
       #changelogbutton {
         float: right;
@@ -163,21 +155,21 @@
         color: var(--text);
         border: 1px solid var(--text);
         padding: 10px 10px;
-        font-size: 32px;
+        font-size: 50px;
         border-radius: 5px;
       }
       h2 {
-        font-size: 48px;
+        font-size: 80px;
       }
       h3 {
-        font-size: 40px;
+        font-size: 60px;
       }
       p{
-        font-size: 35px;
+        font-size: 50px;
       }
       input, select {
         padding: 10px;
-        font-size: 40px;
+        font-size: 60px;
         width: 100%;
         margin-bottom: 10px;
         border-radius: 8px;
@@ -186,11 +178,11 @@
         color: var(--text);
       }
       label {
-        font-size: 40px;
+        font-size: 60px;
       }
       .answer-feedback { 
         margin: 10px 0; padding: 10px; border-radius: 8px; 
-        font-size: 35px;
+        font-size: 70px;
       }
       #warning {
         position: absolute;
@@ -201,7 +193,7 @@
         min-width: 90%;
       }
       td, th {
-        font-size: 40px;
+        font-size: 80px;
       }
     }
   </style>
@@ -225,6 +217,8 @@
         <li>Added end button</li>
         <li>Changed the link at the bottom right</li>
         <li>Added another menu for courses to organize the courses better</li>
+        <li>Added the ability to have multiple choice questions</li>
+        <li>Reworked all the questions currently in Bible Old Testament Unit 2 (up to 2.3)</li>
       </ul>
       <h3>9/17/25</h3>
       <ul>
@@ -295,6 +289,7 @@
       <input type="text" id="userAnswer" placeholder="Your answer">
       <button onclick="submitAnswer()">Submit</button>
     </div>
+    <div id="multipleInput" class="hidden"></div>
     <div id="flashWait" class="hidden">
       <button onclick="showFlashAnswer()">Show Answer</button>
     </div>
@@ -315,7 +310,8 @@
     let ranges = [];
     let test = false, ordered = false, structure = "symbol", modeOrder = "symbolsFirst";
     let index = 0, shuffled = [], symbolsRight = 0, namesRight = 0, wrongAnswers = [];
-    let currentQuestion, currentAnswer, currentType;
+    let currentQuestion, currentAnswer, currentType, maxCount;
+    let options = [];
 
     let subjects = [];
     let courses = [];
@@ -438,7 +434,6 @@
 
     function modifyRanges(min, max, include)
     {
-      console.log("clicked")
       if(include)
       {
         includedRange = [];
@@ -513,7 +508,12 @@
       includedElements.forEach(element => {
         if(questionsFirst)
         {
-          question = [element.Question, element.Answer];
+          if(element.OtherOptions.length === 0)
+          {
+            question = [element.Question, element.Answer];
+          } else {
+            question = [element.Question, element.Answer, element.OtherOptions, element.MaxOptions];
+          }
           questions.push(question);
         } else {
           questions.push([element.Answer, element.Question]);
@@ -548,7 +548,7 @@
       for(i = 0; i < count; i++)
       {
         console.log(i)
-        shuffled.splice(Math.floor(Math.random() * (shuffled.length - 1)), 1);
+        shuffled.splice(Math.round(Math.random() * (shuffled.length - 1)), 1);
       }
       if(!ordered)
       {
@@ -560,20 +560,61 @@
       nextQuestion(type);
     }
     function nextQuestion(type) {
+      document.getElementById("answerInput").classList.add("hidden"); 
+      document.getElementById("multipleInput").classList.add("hidden"); 
       if (index >= shuffled.length) { showResults(); return; }
       const el = shuffled[index]; currentType = type;
-      [currentQuestion, currentAnswer] = el;
+      [currentQuestion, currentAnswer] = [el[0], el[1]];
+      
       document.getElementById("question").classList.remove("hidden");
-      document.getElementById("question").innerHTML = `<h3>${currentQuestion}:</h3>`;
-      if (test) { document.getElementById("answerInput").classList.remove("hidden"); document.getElementById("userAnswer").focus();}
+      document.getElementById("question").innerHTML = `<h3>${currentQuestion}</h3>`;
+      if (test) { 
+        if(el.length > 2)
+        {
+          [options, maxCount] = [el[2].slice(), el[3]];
+          document.getElementById("multipleInput").classList.remove("hidden");
+
+          if(options.length != maxCount - 1)
+          {
+            oldOptions = options.slice();
+            options = [];
+            for(i = 0; i < maxCount - 1; i++)
+            {
+              opIndex = Math.round(Math.random() * (oldOptions.length - 1));
+              options.push(oldOptions[opIndex]);
+              oldOptions.splice(opIndex, 1);
+            }
+          }
+          options.push(currentAnswer);
+          options = shuffle(options.slice())
+          inner = '<select id="multipleSelect">';
+          options.forEach(element => {
+            inner += `<option value = "` + element + `">` + element + `</option>`
+          });
+          document.getElementById("multipleInput").innerHTML = inner + `</select><button onclick="submitAnswer()">Submit</button>`;
+        } else {
+          options = [];
+          maxCount = 1;
+          document.getElementById("answerInput").classList.remove("hidden"); 
+          document.getElementById("userAnswer").focus();
+        }
+      }
       else { document.getElementById("flashWait").classList.remove("hidden"); }
     }
     function submitAnswer() {
-      let input=document.getElementById("userAnswer").value.trim(), fb=document.getElementById("feedback");
+      let input= maxCount == 1 ? document.getElementById("userAnswer").value.trim() : document.getElementById("multipleSelect").value.trim(), 
+      fb = document.getElementById("feedback");
       fb.classList.remove("hidden");
-      if(input===currentAnswer){ fb.innerHTML=`<div class="answer-feedback correct">Correct!</div>`;
+      if(input===currentAnswer){ 
+        fb.innerHTML=`<div class="answer-feedback correct">Correct!</div>`;
         if(currentType==="symbol")symbolsRight++; else namesRight++;
-        setTimeout(()=>{fb.classList.add("hidden");index++;updateProgress();nextQuestion(currentType);},1000);}
+        setTimeout(()=>{
+          fb.classList.add("hidden");
+          index++;
+          console.log(index)
+          updateProgress();
+          nextQuestion(currentType);
+        },1000);}
       else { fb.innerHTML=`<div class="answer-feedback wrong">Wrong! Correct: <b>${currentAnswer}</b></div>`;
         wrongAnswers.push({question:currentQuestion,answer:currentAnswer,wrong:input});
         setTimeout(()=>{fb.classList.add("hidden");index++;updateProgress();nextQuestion(currentType);},2000);}
@@ -608,6 +649,9 @@
       showResults();
       document.getElementById("endTest").classList.add("hidden");
       document.getElementById("flashWait").classList.add("hidden");
+      document.getElementById("flashAnswer").classList.add("hidden");
+      document.getElementById("userAnswer").classList.add("hidden");
+      document.getElementById("multipleInput").classList.add("hidden");
     }
     // Init
     window.onload = () => {
