@@ -207,12 +207,13 @@
       <h2>Changelog</h2>
       <h3>Upcoming</h3>
       <ul>
-        <li>Fix bug causing He, Helium dropdown</li>
-        <li>Allow for different options for the structure</li>
+        <li>Add new implementation for fill in the blank questions</li>
         <li>Create a different menu for Math</li>
       </ul>
       <h3>9/19/25</h3>
       <ul>
+        <li>Added an option under subject to select structures</li>
+        <li>Fixed bug causing He, Helium dropdown</li>
         <li>Made a menu to generate flashcard sets</li>
         <li>Allowed users to upload their generated sets</li>
       </ul>
@@ -253,11 +254,7 @@
         <option value="random">Random</option>
       </select>
       <label>Structure:</label>
-      <select id="structureSelect" onchange="toggleBothOptions()">
-        <option value="symbol">Ask Questions</option>
-        <option value="name">Ask Answers</option>
-        <option value="both">Both</option>
-      </select>
+      <select id="structureSelect" onchange="toggleBothOptions()"></select>
       <div id="bothOptions", class="hidden">
         <label>If Both:</label>
         <select id="bothOrderSelect">
@@ -274,6 +271,11 @@
       <h2>Add Subject</h2>
       <label>Name:</label>
       <input type="text" id="newSubjectName" placeholder="Name">
+      <select id="newSubjectStructure">
+        <option value="symbol">Only Questions</option>
+        <option value="name">Only Answers</option>
+        <option value="both">Questions and Answers</option>
+      </select>
       <button onclick="createNewSubject()">Done</button>
     </div>
     <div id="generateCourseMenu" class="hidden">
@@ -375,7 +377,7 @@
     let elements = [];
     let includedElements = [];
     let ranges = [];
-    let test = false, ordered = false, structure = "symbol", modeOrder = "symbolsFirst";
+    let test = false, ordered = false, structure = "", modeOrder = "symbolsFirst";
     let index = 0, shuffled = [], symbolsRight = 0, namesRight = 0, wrongAnswers = [];
     let currentQuestion, currentAnswer, currentType, maxCount;
     let options = [];
@@ -400,6 +402,27 @@
         data = await res.json();
       }
       subjects = data.Subjects;
+      try {
+        subjects.forEach(element => {
+          aa = element.Structure;
+        });
+        aa.concat("jds")
+      }
+      catch {
+        newSubs = [];
+        subjects.forEach(element => {
+          old = {...element}
+          element = {
+            Name: old.Name,
+            Structure: "both",
+            Courses: old.Courses
+          }
+          newSubs.push(element);
+        })
+        subjects = newSubs
+        generateJson();
+        return;
+      }
       loadSubjectMenu();
     }
 
@@ -424,7 +447,7 @@
         });
       if(!generated)
       {
-        innerHtml += '<br><input type="file" id="fileUpload" accept=".json" name="Upload JSON file">'
+        innerHtml += '<br><h3>Upload generated JSON file:</h3><input type="file" id="fileUpload" accept=".json" name="Upload JSON file">'
       }
       document.getElementById("subjectMenu").innerHTML = innerHtml;
       
@@ -474,7 +497,8 @@
 
     function loadGenerateCourseMenu()
     {
-      if(!document.getElementById("generateSubjectMenu").classList.contains("hidden"))
+      document.getElementById("generateSubjectMenu").classList.add("hidden")
+      if(subjects[subjects.length - 1].Courses.length == 0)
       {
         loadNext("generateCourseMenu", "generateSubjectMenu");
         return;
@@ -516,6 +540,18 @@
         cardSets = courseObj.CardSets;
         setSelect.innerHTML = cardSets
           .map(s => `<option value="${s.Name}">${s.Name}</option>`).join("");
+        
+        switch (structure) {
+          case "both":
+            document.getElementById("structureSelect").innerHTML = `<option value="symbol">Ask Questions</option><option value="name">Ask Answers</option><option value="both">Both</option>`
+            break;
+          case "symbol":
+            document.getElementById("structureSelect").innerHTML = `<option value="symbol">Ask Questions</option>`
+            break;
+          case "name":
+            document.getElementById("structureSelect").innerHTML = `<option value="name">Ask Answers</option>`
+            break;
+        }
         populateCards();
         document.getElementById("setup").classList.remove("hidden");
         ranges = [[1, elements.length]];
@@ -524,12 +560,18 @@
 
     function chooseSubject(subject) {
       let setSelect = document.getElementById("setSelect");
-      courses = subjects.find(subObj => subObj.Name === subject).Courses;
+      subObj = subjects.find(subObj => subObj.Name === subject)
+      courses = subObj.Courses;
+      structure = subObj.Structure;
+
       document.getElementById("subjectMenu").classList.add("hidden");
       document.getElementById("warning").classList.add("hidden");
       if(generating)
       {
-        loadGenerateCourseMenu();
+        document.getElementById("newSubjectName").value = subObj.Name;
+        document.getElementById("newSubjectStructure").value = subObj.Structure;
+        subjects.splice(subjects.indexOf(subObj), 1);
+        loadNext('generateSubjectMenu', 'subjectMenu');
       } else {
         loadCourseMenu();
       }
@@ -538,13 +580,14 @@
     function toggleBothOptions() {
       let val = document.getElementById("structureSelect").value;
       document.getElementById("bothOptions").classList.toggle("hidden", val !== "both");
+      populateCards();
     }
 
     function populateCards()
     {
       const setName = document.getElementById("setSelect").value;
       elements = cardSets.find(set => set.Name = setName).Cards;
-      document.getElementById("numberOfQuestions").value = elements.length
+      document.getElementById("numberOfQuestions").value = document.getElementById('structureSelect').value === "both" ? elements.length * 2 : elements.length
     }
 
     function loadRangesMenu()
@@ -647,9 +690,17 @@
     {
       subject = {
         Name: document.getElementById("newSubjectName").value,
-        Courses: []
+        Structure: document.getElementById("newSubjectStructure").value,
+        Courses: courses.length != 0 ? courses : []
       }
       subjects.push(subject);
+      subjects.sort(function(a, b){
+        let x = a.Name.toLowerCase();
+        let y = b.Name.toLowerCase();
+        if (x < y) {return -1;}
+        if (x > y) {return 1;}
+        return 0;
+      });
       loadGenerateCourseMenu();
     }
 
@@ -907,10 +958,10 @@
         modeOrder = document.getElementById("bothOrderSelect").value;
         if(modeOrder == "symbolsFirst") {
           shuffled = generateQuestions(true)
-          shuffled.push(generateQuestions(false));
+          shuffled.push(...generateQuestions(false));
         } else {
           shuffled = generateQuestions(false)
-          shuffled.push(generateQuestions(true));
+          shuffled.push(...generateQuestions(true));
         }
       }
       length = shuffled.length;
