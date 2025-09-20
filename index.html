@@ -25,9 +25,17 @@
       transition: background 0.3s, color 0.3s;
     }
     #app {
-      max-width: 700px;
+      max-width: 1000px;
       margin: auto;
       background: var(--card);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    }
+    #cardShowcase {
+      max-width: 90%;
+      margin: auto;
+      background: rgb(47, 47, 47);
       padding: 30px;
       border-radius: 15px;
       box-shadow: 0 5px 20px rgba(0,0,0,0.3);
@@ -92,19 +100,9 @@
       height: 100%; width: 0%; background: var(--progress-fill);
       transition: width 0.3s;
     }
-    #themeToggle {
+    .smallbutton {
       float: right;
-      margin: -10px -10px 10px 0;
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--text);
-      padding: 5px 10px;
-      font-size: 14px;
-      border-radius: 5px;
-    }
-    #changelogbutton {
-      float: right;
-      margin: -10px -10px 10px 0;
+      margin: 0px 0px 10px 10px;
       background: transparent;
       color: var(--text);
       border: 1px solid var(--text);
@@ -118,7 +116,7 @@
       color: white;
     }
     #warning {
-      position: absolute;  
+      position: fixed;  
       bottom: 20px; 
       right: 20px;
       background: #363636;
@@ -148,7 +146,7 @@
         color: white;
         cursor: pointer;
       }
-      #changelogbutton {
+      .smallbutton {
         float: right;
         min-width: 0%;
         background: transparent;
@@ -185,7 +183,7 @@
         font-size: 70px;
       }
       #warning {
-        position: absolute;
+        position: fixed;
         bottom: 2%;
         right: 5%;
         left: 5%;
@@ -200,15 +198,24 @@
 </head>
 <body>
   <div id="app">
-    <button onclick="loadNext('changelog', 'subjectMenu')" id="changelogbutton">Changelog</button>
-
-    <p id = "warning">If you would like to view the source code, you can view it on the <a href = "https://github.com/HyGamer2010/Studyapp" target="_blank">Github repository</a>. And if you have any recommendations for what I should add, like sets of cards or subjects, email me at <span onclick="writeToClipboard('email')" id="email">sonict2010@gmail.com</span></p>
+    <p id = "warning">If you would like to view the source code, you can view it on the <a href = "https://github.com/HyGamer2010/Studyapp" target="_blank">Github repository</a>. And if you have any recommendations for what I should add, like sets of cards or subjects, email me at <span onclick="writeToClipboard('sonict2010@gmail.com')" id="email">sonict2010@gmail.com</span></p>
     <!-- Subject Menu -->
     <div id="subjectMenu"></div>
     <div id="courseMenu" class="hidden"></div>
 
     <div id="changelog" class = "hidden">
       <h2>Changelog</h2>
+      <h3>Upcoming</h3>
+      <ul>
+        <li>Fix bug causing He, Helium dropdown</li>
+        <li>Allow for different options for the structure</li>
+        <li>Create a different menu for Math</li>
+      </ul>
+      <h3>9/19/25</h3>
+      <ul>
+        <li>Made a menu to generate flashcard sets</li>
+        <li>Allowed users to upload their generated sets</li>
+      </ul>
       <h3>9/18/25</h3>
       <ul>
         <li>Added the advanced menu option and the ranges menu found inside</li>
@@ -263,6 +270,66 @@
       <button onclick="loadNext('subjectMenu', 'setup')">Back</button>
     </div>
 
+    <div id="generateSubjectMenu" class="hidden">
+      <h2>Add Subject</h2>
+      <label>Name:</label>
+      <input type="text" id="newSubjectName" placeholder="Name">
+      <button onclick="createNewSubject()">Done</button>
+    </div>
+    <div id="generateCourseMenu" class="hidden">
+      <h2>Add Course</h2>
+      <label>Name:</label>
+      <input type="text" id="newCourseName" placeholder="Name">
+      <button onclick="createNewCourse()">Done</button>
+    </div>
+    <div id="generateCardsetMenu" class="hidden">
+      <h2>Add Flashcard Set</h2>
+      <label>Name:</label>
+      <input type="text" id="newCardsetName" placeholder="Name">
+      <button onclick="createCardset()">Done</button>
+    </div>
+    <div id="generatingCardsets" class="hidden"></div>
+    <div id="modifyCardset" class="hidden">
+      <h2>Choose a card to modify</h2>
+      <table id="modifyCardsTable"></table>
+      <button onclick="addNewCard()">Add card</button><br>
+      <button onclick="loadGenerateCourseMenu()">Finish</button>
+    </div>
+    <div id="modifyCard" class="hidden">
+      <h2>Modify Card</h2>
+      <button id="deleteCard">Delete card</button><br>
+      <label>Question*:</label>
+      <input type="text" id="modifyCardQuestion" placeholder="Your question">
+      <label>Answer*:</label>
+      <input type="text" id="modifyCardAnswer" placeholder="Your answer">
+      <div id="modifyPossibilitiesTable">
+        <label>Other possible choices on multiple choice:</label>
+        <table></table>
+      </div>
+      <label>New possibility</label>
+      <input type="text" id="newPossiblity">
+      <button id="addPossibility">Add</button>
+      <div id="modifyMaxCount">
+        <label>Max number of displayed choices* (including the correct one)</label>
+        <input type="number">
+      </div>
+      <button id="finishModifyCard">Finish</button>
+      <div id="cardShowcase">
+        <div id="showcaseQuestion"></div>
+        <div id="showcaseAnswerInput" class="hidden">
+          <input type="text" placeholder="Your answer">
+          <button>Submit</button>
+        </div>
+        <div id="showcaseMultipleInput" class="hidden"></div>
+      </div>
+      
+    </div>
+    <div id="newJson" class="hidden">
+      <h2>Click the text to copy it</h2>
+      <a></a>
+      <button>Generate</button>
+    </div>
+
     <div id="advanced" class="hidden">
       <h2>Advanced Settings</h2>
       <label>Max number of questions</label>
@@ -312,6 +379,10 @@
     let index = 0, shuffled = [], symbolsRight = 0, namesRight = 0, wrongAnswers = [];
     let currentQuestion, currentAnswer, currentType, maxCount;
     let options = [];
+    generated = false;
+    generating = false;
+
+    let newJson = "";
 
     let subjects = [];
     let courses = [];
@@ -319,17 +390,24 @@
 
     // === Subject Menu ===
     async function loadData() {
-      const res = await fetch('data.json');
-      const data = await res.json();
+      let data, res;
+      try {
+        res = await fetch('generated.json');
+        data = await res.json();
+        generated = true;
+      } catch {
+        res = await fetch('data.json');
+        data = await res.json();
+      }
       subjects = data.Subjects;
       loadSubjectMenu();
     }
 
     function writeToClipboard(value)
     {
-      navigator.clipboard.writeText(document.getElementById(value).innerText);
+      navigator.clipboard.writeText(value);
 
-      alert("Copied text: " + document.getElementById(value).innerText)
+      alert("Copied text: " + value)
     }
 
     function loadSubjectMenu()
@@ -337,12 +415,49 @@
       document.getElementById("results").classList.add("hidden");
       document.getElementById("subjectMenu").classList.remove("hidden");
       innerHtml = `
-        <h2>Select a Subject</h2>
+        <button onclick="loadNext('changelog', 'subjectMenu')" id="changelogbutton" class="smallbutton">Changelog</button>
+        <button onclick="loadGenerateSubjectMenu()" class="smallbutton">Generate</button>
+        <h2>Select a Subject` + (generated ? ": Uploaded" : "") + `</h2>
       `
       subjects.forEach(element => {
           innerHtml += `<button onclick="chooseSubject('` + element.Name + `')">` + element.Name + `</button>`
         });
+      if(!generated)
+      {
+        innerHtml += '<br><input type="file" id="fileUpload" accept=".json" name="Upload JSON file">'
+      }
       document.getElementById("subjectMenu").innerHTML = innerHtml;
+      
+      document.getElementById("subjectMenu").addEventListener("change", function(event) {
+        if (event.target && event.target.id === "fileUpload") {
+          const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const content = e.target.result;
+            const data = JSON.parse(content);
+            subjects = data.Subjects;
+            generated = true;
+            loadSubjectMenu();
+          };
+          reader.readAsText(file);
+        }
+  }
+});
+    }
+
+    function loadGenerateSubjectMenu()
+    {
+      document.getElementById("subjectMenu").classList.remove("hidden")
+      document.getElementById("courseMenu").classList.add("hidden")
+      generating = true;
+      inner = `
+        <h2>Choose a subject to modify</h2>
+      `
+      subjects.forEach(element => {
+        inner += `<button onclick="chooseSubject('` + element.Name + `')">` + element.Name + `</button>`
+      })
+      document.getElementById("subjectMenu").innerHTML = inner + `<button onclick="loadNext('generateSubjectMenu', 'subjectMenu')">Add new</button><button onclick="generateJson()">Finish</button>`
     }
 
     function loadCourseMenu()
@@ -357,6 +472,27 @@
       document.getElementById("courseMenu").innerHTML = innerHtml;
     }
 
+    function loadGenerateCourseMenu()
+    {
+      if(!document.getElementById("generateSubjectMenu").classList.contains("hidden"))
+      {
+        loadNext("generateCourseMenu", "generateSubjectMenu");
+        return;
+      }
+      document.getElementById("courseMenu").classList.remove("hidden");
+      document.getElementById("subjectMenu").classList.add("hidden");
+      document.getElementById("modifyCardset").classList.add("hidden");
+      
+      generating = true;
+      inner = `
+        <h2>Choose a course to modify</h2>
+      `
+      courses.forEach(element => {
+        inner += `<button onclick="chooseCourse('` + element.Name + `')">` + element.Name + `</button>`
+      })
+      document.getElementById("courseMenu").innerHTML = inner + `<button onclick="loadNext('generateCourseMenu','courseMenu')">Create new</button><button onclick='loadGenerateSubjectMenu()'>Finish</button>`
+    }
+
     function loadNext(show, hide)
     {
       document.getElementById(hide).classList.add("hidden");
@@ -364,16 +500,26 @@
     }
 
     function chooseCourse(course) {
-      let setSelect = document.getElementById("setSelect");
-      cardSets = courses.find(courseObj => courseObj.Name === course).CardSets;
-        setSelect.innerHTML = cardSets
-          .map(s => `<option value="${s.Name}">${s.Name}</option>`).join("");
-
       document.getElementById("courseMenu").classList.add("hidden");
       document.getElementById("warning").classList.add("hidden");
-      document.getElementById("setup").classList.remove("hidden");
-      populateCards();
-      ranges = [[1, elements.length]];
+      courseObj = courses.find(courseObj => courseObj.Name === course);
+      if(generating){
+        if(courseObj.CardSets.length == 0)
+        {
+          document.getElementById("generateCardsetMenu").classList.remove("hidden");
+        } else {
+          cardSets = courseObj.CardSets
+          loadGeneratingCardsetMenu();
+        }
+      }else {
+        let setSelect = document.getElementById("setSelect");
+        cardSets = courseObj.CardSets;
+        setSelect.innerHTML = cardSets
+          .map(s => `<option value="${s.Name}">${s.Name}</option>`).join("");
+        populateCards();
+        document.getElementById("setup").classList.remove("hidden");
+        ranges = [[1, elements.length]];
+      }
     }
 
     function chooseSubject(subject) {
@@ -381,7 +527,12 @@
       courses = subjects.find(subObj => subObj.Name === subject).Courses;
       document.getElementById("subjectMenu").classList.add("hidden");
       document.getElementById("warning").classList.add("hidden");
-      loadCourseMenu();
+      if(generating)
+      {
+        loadGenerateCourseMenu();
+      } else {
+        loadCourseMenu();
+      }
     }
 
     function toggleBothOptions() {
@@ -492,6 +643,225 @@
       editShownCards();
     }
 
+    function createNewSubject()
+    {
+      subject = {
+        Name: document.getElementById("newSubjectName").value,
+        Courses: []
+      }
+      subjects.push(subject);
+      loadGenerateCourseMenu();
+    }
+
+    function createNewCourse()
+    {
+      course = {
+        Name: document.getElementById("newCourseName").value,
+        CardSets: []
+      }
+      subjects[subjects.length - 1].Courses.push(course);
+      courses = subjects[subjects.length - 1].Courses;
+      cardSets = course.CardSets;
+      document.getElementById("generateCourseMenu").classList.add("hidden");
+      loadGeneratingCardsetMenu();
+    }
+
+    function loadGeneratingCardsetMenu()
+    {
+      document.getElementById("generatingCardsets").classList.remove("hidden");
+      inner = `
+        <h2>Choose a Flashcard Set to Modify</h2>
+      `
+      cardSets.forEach(element => {
+          inner += `<button onclick="modifyCardset('` + element.Name + `')">` + element.Name + `</button>`
+        });
+      
+      document.getElementById("generatingCardsets").innerHTML = inner + `<button onclick="loadNext('generateCardsetMenu', 'generatingCardsets')">Add new</button>`;
+    }
+
+    function createCardset()
+    {
+      cardset = {
+        Name: document.getElementById("newCardsetName").value,
+        Cards: []
+      }
+      cardSets.push(cardset);
+      modifyCardset(cardset.Name);
+    }
+
+    function modifyCardset(cardsetName)
+    {
+      document.getElementById("generatingCardsets").classList.add("hidden");
+      document.getElementById("generateCardsetMenu").classList.add("hidden");
+      document.getElementById("modifyCardset").classList.remove("hidden");
+      cardset = cardSets.find(set => set.Name === cardsetName);
+      editCardsetTable();
+    }
+
+    function editCardsetTable()
+    {
+      table = document.getElementById("modifyCardsTable");
+      inner = '<tr><th>Question</th><th>Answer</th></tr>';
+      elements = cardset.Cards;
+      if(elements.length === 0)
+      {
+        table.classList.add("hidden");
+        return;
+      }
+      table.classList.remove("hidden");
+      elements.forEach(element => {
+        inner += `<tr onclick="selectCard(` + elements.indexOf(element) + `)"><td>` + element.Question + `</td><td>` + element.Answer + `</td></tr>`
+      });
+      table.innerHTML = inner;
+    }
+
+    function selectCard(indexOfCard)
+    {
+      card = elements[indexOfCard];
+      questionElement = document.getElementById("modifyCardQuestion");
+      questionElement.setAttribute('oninput', 'showcaseCard(' + indexOfCard + ')')
+      answerElement = document.getElementById("modifyCardAnswer");
+      answerElement.setAttribute('oninput', 'showcaseCard(' + indexOfCard + ')')
+      tableContainerElement = document.getElementById("modifyPossibilitiesTable");
+      tableElement = tableContainerElement.getElementsByTagName('table')[0];
+      countContainerElement = document.getElementById("modifyMaxCount");
+      countElement = countContainerElement.getElementsByTagName('input')[0];
+      countElement.setAttribute('oninput', 'showcaseCard(' + indexOfCard + ')')
+      document.getElementById("finishModifyCard").setAttribute('onclick', "finishCard(" + indexOfCard + ")");
+      document.getElementById("addPossibility").setAttribute('onclick', "addPossibility(" + indexOfCard + ")");
+      document.getElementById("deleteCard").setAttribute('onclick', `deleteCard(${indexOfCard})`)
+
+      questionElement.value = card.Question;
+      answerElement.value = card.Answer;
+      if(card.OtherOptions.length == 0)
+      {
+        countElement.value = 1;
+        tableContainerElement.classList.add("hidden");
+        countContainerElement.classList.add("hidden");
+      }
+      else {
+        countElement.value = card.MaxOptions;
+        tableContainerElement.classList.remove("hidden");
+        countContainerElement.classList.remove("hidden");
+      }
+
+      questionElement.onchange = "selectCard(" + indexOfCard +  ")";
+      answerElement.onchange = "selectCard(" + indexOfCard +  ")";
+      countElement.onchange = "selectCard(" + indexOfCard +  ")";
+
+      tableInner = '<tr><th>Possibilites</th></tr>'
+      card.OtherOptions.forEach(element => {
+        tableInner += '<tr onclick="removePossibility(' + indexOfCard + ', ' + card.OtherOptions.indexOf(element) + ')"><td>' + element + '</td></tr>'
+      });
+      tableElement.innerHTML = tableInner;
+      if(card.OtherOptions.length > 0)
+      {
+        countElement.classList.remove("hidden");
+      } else {
+        countElement.classList.add("hidden");
+      }
+      card.Question = questionElement.value;
+      card.Answer = answerElement.value;
+      editCardsetTable();
+      showcaseCard(indexOfCard);
+      loadNext("modifyCard", "modifyCardset");
+    }
+
+    function showcaseCard(indexOfCard)
+    {
+      card = elements[indexOfCard];
+      card.Question = questionElement.value;
+      card.Answer = answerElement.value;
+      card.MaxOptions = countElement.value;
+      document.getElementById("showcaseQuestion").innerHTML = `<h2>Showcase</h2><h3>${card.Question === "" ? "Your question" : card.Question}</h3>`;
+      if(card.OtherOptions.length > 0)
+      {
+        document.getElementById("showcaseMultipleInput").classList.remove("hidden");
+        document.getElementById("showcaseAnswerInput").classList.add("hidden");
+
+        options = card.OtherOptions.slice();
+        maxCount = parseInt(document.getElementById("modifyMaxCount").getElementsByTagName("input")[0].value);
+        if(options.length != maxCount - 1)
+        {
+          oldOptions = options.slice();
+          options = [];
+          for(i = 0; i < maxCount - 1; i++)
+          {
+            opIndex = Math.round(Math.random() * (oldOptions.length - 1));
+            options.push(oldOptions[opIndex]);
+            oldOptions.splice(opIndex, 1);
+          }
+        }
+        options.push(card.Answer);
+        options = shuffle(options.slice())
+        inner = '<select>';
+        options.forEach(element => {
+          inner += `<option value = "` + element + `">` + element + `</option>`
+        });
+        document.getElementById("showcaseMultipleInput").innerHTML = inner + `</select><button>Submit</button>`;
+      } else {
+        document.getElementById("showcaseMultipleInput").classList.add("hidden");
+        document.getElementById("showcaseAnswerInput").classList.remove("hidden");
+      }
+    }
+
+    function deleteCard(indexOfCard)
+    {
+      elements.splice(indexOfCard, 1);
+      editCardsetTable();
+      loadNext("modifyCardset", "modifyCard");
+    }
+
+    function addNewCard()
+    {
+      elements.push({
+        Question: "",
+        Answer: "",
+        OtherOptions: [],
+        MaxOptions: 1
+      })
+      selectCard(elements.length - 1);
+    }
+
+    function finishCard(indexOfCard)
+    {
+      card = elements[indexOfCard];
+      if(document.getElementById("modifyCardQuestion").value === "" || document.getElementById("modifyCardAnswer").value === "" || (document.getElementById("modifyMaxCount").getElementsByTagName('input')[0].value === "" && card.OtherOptions.length > 0))
+      {
+        deleteCard(indexOfCard);
+        alert("You did not put all the required info")
+        return;
+      }
+      elements[indexOfCard] = card
+      editCardsetTable();
+      loadNext("modifyCardset", "modifyCard")
+    }
+
+    async function generateJson()
+    {
+      document.getElementById("newJson").classList.remove("hidden");
+      document.getElementById("subjectMenu").classList.add("hidden");
+      newJson = JSON.stringify({Subjects: subjects})
+      element = document.getElementById("newJson").getElementsByTagName("a")[0];
+      element.innerHTML = newJson;
+
+      blob = new Blob([newJson], { type: 'text/plain' });
+      url = URL.createObjectURL(blob);
+      element.href = url;
+      element.download = 'generated.json';
+    }
+
+    function removePossibility(indexOfCard, indexOfPossibility)
+    {
+      elements[indexOfCard].OtherOptions.splice(indexOfPossibility, 1);
+      selectCard(indexOfCard);
+    }
+    function addPossibility(indexOfCard)
+    {
+      elements[indexOfCard].OtherOptions.push(document.getElementById("newPossiblity").value);
+      selectCard(indexOfCard);
+    }
+    
     // === Setup Start ===
     function beginFromSetup() {
       editShownCards();
