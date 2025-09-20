@@ -183,6 +183,7 @@
         font-size: 70px;
       }
       #warning {
+      font-size: 30px;
         position: fixed;
         bottom: 2%;
         right: 5%;
@@ -198,7 +199,7 @@
 </head>
 <body>
   <div id="app">
-    <p id = "warning">If you would like to view the source code, you can view it on the <a href = "https://github.com/HyGamer2010/Studyapp" target="_blank">Github repository</a>. And if you have any recommendations for what I should add, like sets of cards or subjects, email me at <span onclick="writeToClipboard('sonict2010@gmail.com')" id="email">sonict2010@gmail.com</span></p>
+    <p id = "warning">If you would like to view the source code, you can view it on the <a href = "https://github.com/HyGamer2010/Studyapp" target="_blank">Github repository</a>. And if you have any recommendations for what I should add or generated JSON files for me to add, email me at <span onclick="writeToClipboard('sonict2010@gmail.com')" id="email">sonict2010@gmail.com</span></p>
     <!-- Subject Menu -->
     <div id="subjectMenu"></div>
     <div id="courseMenu" class="hidden"></div>
@@ -207,8 +208,11 @@
       <h2>Changelog</h2>
       <h3>Upcoming</h3>
       <ul>
-        <li>Add new implementation for fill in the blank questions</li>
         <li>Create a different menu for Math</li>
+      </ul>
+      <h3>9/20/25</h3>
+      <ul>
+        <li>Added implementation for simple fill in the blank questions</li>
       </ul>
       <h3>9/19/25</h3>
       <ul>
@@ -300,12 +304,12 @@
     <div id="modifyCard" class="hidden">
       <h2>Modify Card</h2>
       <button id="deleteCard">Delete card</button><br>
-      <label>Question*:</label>
+      <label>Question*(add _____ where the blank is in the question):</label>
       <input type="text" id="modifyCardQuestion" placeholder="Your question">
       <label>Answer*:</label>
       <input type="text" id="modifyCardAnswer" placeholder="Your answer">
       <div id="modifyPossibilitiesTable">
-        <label>Other possible choices on multiple choice:</label>
+        <label>Other possible choices on multiple choice(click a choice to remove it):</label>
         <table></table>
       </div>
       <label>New possibility</label>
@@ -315,11 +319,11 @@
         <label>Max number of displayed choices* (including the correct one)</label>
         <input type="number">
       </div>
-      <button id="finishModifyCard">Finish</button>
+      <br><button id="finishModifyCard">Finish</button>
       <div id="cardShowcase">
         <div id="showcaseQuestion"></div>
         <div id="showcaseAnswerInput" class="hidden">
-          <input type="text" placeholder="Your answer">
+          <input type="text" placeholder="Your answer" id="showcaseUserAnswer">
           <button>Submit</button>
         </div>
         <div id="showcaseMultipleInput" class="hidden"></div>
@@ -804,6 +808,7 @@
       card.Answer = answerElement.value;
       card.MaxOptions = countElement.value;
       document.getElementById("showcaseQuestion").innerHTML = `<h2>Showcase</h2><h3>${card.Question === "" ? "Your question" : card.Question}</h3>`;
+      document.getElementById("showcaseUserAnswer").classList.remove("hidden");
       if(card.OtherOptions.length > 0)
       {
         document.getElementById("showcaseMultipleInput").classList.remove("hidden");
@@ -832,6 +837,17 @@
       } else {
         document.getElementById("showcaseMultipleInput").classList.add("hidden");
         document.getElementById("showcaseAnswerInput").classList.remove("hidden");
+        if(card.Question.includes("_____"))
+        {
+          halves = card.Question.split("_____", 2);
+          document.getElementById("showcaseUserAnswer").classList.add("hidden");
+          fontSize = parseInt(window.getComputedStyle(document.getElementById("showcaseUserAnswer")).fontSize.split(0, 2))
+          newElement = document.getElementById("showcaseUserAnswer").cloneNode(true);
+          newElement.classList.remove("hidden");
+          newElement.setAttribute('id', "");
+          newElement.setAttribute('style', `max-width: ${(card.Answer.length + 2) * fontSize}px`)
+          document.getElementById("showcaseQuestion").innerHTML = `<h2>Showcase</h2><h3>${halves[0]}${newElement.outerHTML}${halves[1]}</h3>`;
+        }
       }
     }
 
@@ -960,6 +976,7 @@
       nextQuestion(type);
     }
     function nextQuestion(type) {
+      document.getElementById("question").innerHTML = "";
       document.getElementById("answerInput").classList.add("hidden"); 
       document.getElementById("multipleInput").classList.add("hidden"); 
       if (index >= shuffled.length) { showResults(); return; }
@@ -967,10 +984,10 @@
       [currentQuestion, currentAnswer] = [el[0], el[1]];
       
       document.getElementById("question").classList.remove("hidden");
-      document.getElementById("question").innerHTML = `<h3>${currentQuestion}</h3>`;
       if (test) { 
         if(el.length > 2)
         {
+          document.getElementById("question").innerHTML = `<h3>${currentQuestion}</h3>`;
           [options, maxCount] = [el[2].slice(), el[3]];
           document.getElementById("multipleInput").classList.remove("hidden");
 
@@ -993,13 +1010,31 @@
           });
           document.getElementById("multipleInput").innerHTML = inner + `</select><button onclick="submitAnswer()">Submit</button>`;
         } else {
+          if(currentQuestion.includes("_____"))
+          {
+            document.getElementById("userAnswer").classList.add("hidden"); 
+            halves = currentQuestion.split('_____', 2);
+            fontSize = parseInt(window.getComputedStyle(document.getElementById("userAnswer")).fontSize.split(0, 2))
+            newElement = document.getElementById("userAnswer").cloneNode(true);
+            newElement.classList.remove("hidden")
+            newElement.setAttribute('style', `max-width: ${(currentAnswer.length + 2) * fontSize}px`)
+            inner = `<h3>${halves[0]}${newElement.outerHTML}${halves[1]}</h3>`;
+          } else {
+            document.getElementById("userAnswer").classList.remove("hidden"); 
+            inner = `<h3>${currentQuestion}</h3>`;
+            console.log("here")
+          }
+          document.getElementById("answerInput").classList.remove("hidden"); 
+          document.getElementById("question").innerHTML = inner;
           options = [];
           maxCount = 1;
-          document.getElementById("answerInput").classList.remove("hidden"); 
           document.getElementById("userAnswer").focus();
         }
       }
-      else { document.getElementById("flashWait").classList.remove("hidden"); }
+      else { 
+        document.getElementById("question").innerHTML = `<h3>${currentQuestion}</h3>`;
+        document.getElementById("flashWait").classList.remove("hidden"); 
+      }
     }
     function submitAnswer() {
       let input= maxCount == 1 ? document.getElementById("userAnswer").value.trim() : document.getElementById("multipleSelect").value.trim(), 
