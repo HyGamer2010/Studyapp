@@ -402,27 +402,6 @@
         data = await res.json();
       }
       subjects = data.Subjects;
-      try {
-        subjects.forEach(element => {
-          aa = element.Structure;
-        });
-        aa.concat("jds")
-      }
-      catch {
-        newSubs = [];
-        subjects.forEach(element => {
-          old = {...element}
-          element = {
-            Name: old.Name,
-            Structure: "both",
-            Courses: old.Courses
-          }
-          newSubs.push(element);
-        })
-        subjects = newSubs
-        generateJson();
-        return;
-      }
       loadSubjectMenu();
     }
 
