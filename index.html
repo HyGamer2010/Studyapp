@@ -210,6 +210,11 @@
       <ul>
         <li>Create a different menu for Math</li>
       </ul>
+      <h3>9/21/25</h3>
+      <ul>
+        <li>Modified multiple cards in Bible Old Testament Unit 2 to be better fit for the new system</li>
+        <li>Implemented the ability to have multiple blanks in a question and adapted the rest of the code to it, included the creation and the testing.</li>
+      </ul>
       <h3>9/20/25</h3>
       <ul>
         <li>Added implementation for simple fill in the blank questions</li>
@@ -306,8 +311,7 @@
       <button id="deleteCard">Delete card</button><br>
       <label>Question*(add _____ where the blank is in the question):</label>
       <input type="text" id="modifyCardQuestion" placeholder="Your question">
-      <label>Answer*:</label>
-      <input type="text" id="modifyCardAnswer" placeholder="Your answer">
+      <div id="modifyAnswers"></div>
       <div id="modifyPossibilitiesTable">
         <label>Other possible choices on multiple choice(click a choice to remove it):</label>
         <table></table>
@@ -359,7 +363,7 @@
     <!-- Quiz/Flash UI -->
     <div id="question" class="hidden"></div>
     <div id="answerInput" class="hidden">
-      <input type="text" id="userAnswer" placeholder="Your answer">
+      <input type="text" id="userAnswer0" placeholder="Your answer" class="userAnswer">
       <button onclick="submitAnswer()">Submit</button>
     </div>
     <div id="multipleInput" class="hidden"></div>
@@ -406,6 +410,39 @@
         data = await res.json();
       }
       subjects = data.Subjects;
+      /*
+      try {
+        subjects.forEach(subObj => {
+          subObj.Courses.forEach(courseObj => {
+            courseObj.CardSets.forEach(set => {
+              set.Cards.forEach(card => {
+                va = card.Answers[0]
+              })
+            })
+          });
+        });
+      } catch {
+        subjects.forEach(subObj => {
+          subObj.Courses.forEach(courseObj => {
+            courseObj.CardSets.forEach(set => {
+              for(i = 0; i < set.Cards.length; i++)
+              {
+                old = {...set.Cards[i]}
+                let newCard = {
+                  Question: old.Question,
+                  Answers: [[old.Answer]],
+                  OtherOptions: old.OtherOptions,
+                  MaxOptions: old.MaxOptions
+                }
+                set.Cards[i] = newCard
+                set.Cards[i])
+              }
+            })
+          });
+        });
+        generateJson();
+        return;
+      }*/
       loadSubjectMenu();
     }
 
@@ -744,7 +781,12 @@
       }
       table.classList.remove("hidden");
       elements.forEach(element => {
-        inner += `<tr onclick="selectCard(` + elements.indexOf(element) + `)"><td>` + element.Question + `</td><td>` + element.Answer + `</td></tr>`
+        answers = element.Answers[0][0];
+        for(i = 1; i < element.Answers.length; i++)
+        {
+          answers += ", " + element.Answers[i][0];
+        }
+        inner += `<tr onclick="selectCard(` + elements.indexOf(element) + `)"><td>` + element.Question + `</td><td>` + answers + `</td></tr>`
       });
       table.innerHTML = inner;
     }
@@ -753,34 +795,26 @@
     {
       card = elements[indexOfCard];
       questionElement = document.getElementById("modifyCardQuestion");
-      questionElement.setAttribute('oninput', 'showcaseCard(' + indexOfCard + ')')
-      answerElement = document.getElementById("modifyCardAnswer");
-      answerElement.setAttribute('oninput', 'showcaseCard(' + indexOfCard + ')')
+      questionElement.setAttribute('oninput', 'modifyCard(' + indexOfCard + ')')
+      answerElement = document.getElementById("modifyAnswers");
+      //answerElement.setAttribute('oninput', 'showcaseCard(' + indexOfCard + ')')
       tableContainerElement = document.getElementById("modifyPossibilitiesTable");
       tableElement = tableContainerElement.getElementsByTagName('table')[0];
       countContainerElement = document.getElementById("modifyMaxCount");
       countElement = countContainerElement.getElementsByTagName('input')[0];
-      countElement.setAttribute('oninput', 'showcaseCard(' + indexOfCard + ')')
+      countElement.setAttribute('oninput', 'modifyCard(' + indexOfCard + ')')
       document.getElementById("finishModifyCard").setAttribute('onclick', "finishCard(" + indexOfCard + ")");
       document.getElementById("addPossibility").setAttribute('onclick', "addPossibility(" + indexOfCard + ")");
       document.getElementById("deleteCard").setAttribute('onclick', `deleteCard(${indexOfCard})`)
 
       questionElement.value = card.Question;
-      answerElement.value = card.Answer;
-      if(card.OtherOptions.length == 0)
-      {
-        countElement.value = 1;
-        tableContainerElement.classList.add("hidden");
-        countContainerElement.classList.add("hidden");
-      }
-      else {
-        countElement.value = card.MaxOptions;
-        tableContainerElement.classList.remove("hidden");
-        countContainerElement.classList.remove("hidden");
-      }
+      //answerElement.value = card.Answer;
+      answerInner = "";
+
+      modifyCard(indexOfCard);
 
       questionElement.onchange = "selectCard(" + indexOfCard +  ")";
-      answerElement.onchange = "selectCard(" + indexOfCard +  ")";
+      //answerElement.onchange = "selectCard(" + indexOfCard +  ")";
       countElement.onchange = "selectCard(" + indexOfCard +  ")";
 
       tableInner = '<tr><th>Possibilites</th></tr>'
@@ -797,20 +831,146 @@
       card.Question = questionElement.value;
       card.Answer = answerElement.value;
       editCardsetTable();
-      showcaseCard(indexOfCard);
       loadNext("modifyCard", "modifyCardset");
+    }
+
+    function addAnswerToInput(indexOfCard, indexOfAnswer)
+    {
+      card = elements[indexOfCard];
+      answer = card.Answers[indexOfAnswer];
+      answer.push("");
+      editAnswerFields(indexOfCard);
+      modifyCard(indexOfCard);
+    }
+
+    function removeAnswerFromInput(indexOfCard, indexOfAnswer)
+    {
+      card = elements[indexOfCard];
+      answer = card.Answers[indexOfAnswer];
+      answer.pop();
+      editAnswerFields(indexOfCard)
+      modifyCard(indexOfCard);
+    }
+
+    function modifyCard(indexOfCard)
+    {
+      answerInputs = "";
+      card = elements[indexOfCard];
+      card.Question = questionElement.value;
+      card.MaxOptions = countElement.value;
+      inputElements = document.getElementById("modifyAnswers").getElementsByTagName("div");
+      if(inputElements.length == card.Answers.length)
+      {
+        for(i = 0; i < inputElements.length; i++)
+        {
+          card.Answers[i] = [];
+          inputElement = inputElements[i];
+          answerInputs = inputElement.getElementsByTagName('input');
+          for(j = 0; j < answerInputs.length; j++)
+          {
+            answerInput = answerInputs[j];
+            card.Answers[i].push(answerInput.value)
+          }
+        }
+      }
+      if(card.OtherOptions.length == 0)
+      {
+        countElement.value = 1;
+        tableContainerElement.classList.add("hidden");
+        countContainerElement.classList.add("hidden");
+        difference = questionElement.value.split("_____").length - 1 - card.Answers.length;
+        newAnswers = card.Answers.slice();
+        if(difference > 0)
+        {
+          for(i = 0; i < difference; i++)
+          {
+            newAnswers.push([""]);
+          }
+        } else if(difference < 0 && card.Answers.length != 1)
+        {
+          for(i = 0; i > difference; i--)
+          {
+            newAnswers.pop();
+          }
+        }
+        card.Answers = newAnswers
+        if(inputElements.length != newAnswers.length)
+        {
+          editAnswerFields(indexOfCard)
+        }
+        for(i = 0; i < card.Answers.length; i++)
+        {
+          try {
+            if(card.Answers[i].length == inputElements[i].getElementsByTagName('input').length)
+            {
+              continue;
+            } 
+          } catch {
+
+          }
+          editAnswerFields(indexOfCard);
+        }
+      }
+      else {
+        answerInner = `<div id="answer0">
+            <label>Answer*</label>
+            <input type="text" id="modifyCardAnswer${card.Answers[0][0]}" placeholder="Your answer" value="${card.Answers[0][0]}" oninput="modifyCard(${indexOfCard})" ')>
+        </div>`
+        countElement.value = card.MaxOptions;
+        tableContainerElement.classList.remove("hidden");
+        countContainerElement.classList.remove("hidden");
+        answerElement.innerHTML = answerInner;
+      }
+      showcaseCard(indexOfCard);
+    }
+
+    function editAnswerFields(indexOfCard)
+    {
+      answerInner = `<label style="font-weight: bold;">Inputs*</label>`
+      card = elements[indexOfCard]
+      for(i = 0; i < card.Answers.length; i++)
+        {
+          answerInputs = ""
+          inputElement = inputElements[i];
+          card.Answers[i].forEach(element => {
+            answerInputs += `<input type="text" id="modifyCardAnswer${card.Answers[i].indexOf(element)}" placeholder="Your answer" value="${element}" oninput="modifyCard(${indexOfCard})" ')>`//  oninput=showcaseCard('${indexOfCard}
+          });
+          answerInner += `<div id="answer${i}">
+              <label>Answer ${i}*</label>
+              ${answerInputs}
+              <button onclick="addAnswerToInput(${indexOfCard},${i})">Add new answer</button>
+              <button onclick="removeAnswerFromInput(${indexOfCard},${i})">Remove answer</button>
+          </div>`
+        }
+        answerElement.innerHTML = answerInner;
     }
 
     function showcaseCard(indexOfCard)
     {
       card = elements[indexOfCard];
-      card.Question = questionElement.value;
-      card.Answer = answerElement.value;
-      card.MaxOptions = countElement.value;
+      //card.Answer = answerElement.value;
+      inputs = [];
+
+      inputElements = document.getElementById("modifyAnswers").getElementsByTagName("div");
+      for(i = 0; i < inputElements.length; i++)
+      {
+        card.Answers[i] = [];
+        inputElement = inputElements[i];
+        answerInputs = inputElement.getElementsByTagName('input');
+        for(j = 0; j < answerInputs.length; j++)
+        {
+          answerInput = answerInputs[j];
+          card.Answers[i].push(answerInput.value)
+        }
+      }
+      
+
       document.getElementById("showcaseQuestion").innerHTML = `<h2>Showcase</h2><h3>${card.Question === "" ? "Your question" : card.Question}</h3>`;
       document.getElementById("showcaseUserAnswer").classList.remove("hidden");
       if(card.OtherOptions.length > 0)
       {
+        oldAnswers = card.Answers.slice();
+        card.Answers = [[oldAnswers[0][0]]]
         document.getElementById("showcaseMultipleInput").classList.remove("hidden");
         document.getElementById("showcaseAnswerInput").classList.add("hidden");
 
@@ -827,7 +987,7 @@
             oldOptions.splice(opIndex, 1);
           }
         }
-        options.push(card.Answer);
+        options.push(card.Answers[0][0]);
         options = shuffle(options.slice())
         inner = '<select>';
         options.forEach(element => {
@@ -837,16 +997,31 @@
       } else {
         document.getElementById("showcaseMultipleInput").classList.add("hidden");
         document.getElementById("showcaseAnswerInput").classList.remove("hidden");
+        
         if(card.Question.includes("_____"))
         {
-          halves = card.Question.split("_____", 2);
+          halves = card.Question.split("_____");
           document.getElementById("showcaseUserAnswer").classList.add("hidden");
           fontSize = parseInt(window.getComputedStyle(document.getElementById("showcaseUserAnswer")).fontSize.split(0, 2))
-          newElement = document.getElementById("showcaseUserAnswer").cloneNode(true);
-          newElement.classList.remove("hidden");
-          newElement.setAttribute('id', "");
-          newElement.setAttribute('style', `max-width: ${(card.Answer.length + 2) * fontSize}px`)
-          document.getElementById("showcaseQuestion").innerHTML = `<h2>Showcase</h2><h3>${halves[0]}${newElement.outerHTML}${halves[1]}</h3>`;
+          showcaseInner = halves[0];
+          for(i = 1; i < halves.length; i++)
+          {
+            answersString = card.Answers[i - 1][0];
+            for(j = 1; j < card.Answers[i - 1].length; j++)
+            {
+              answersString += ` or ${card.Answers[i - 1][j]}`
+            }
+            newElement = document.getElementById("showcaseUserAnswer").cloneNode(true);
+            newElement.classList.remove("hidden");
+            newElement.removeAttribute('id');
+            newElement.setAttribute('style', `width: ${(answersString.length + 2) * fontSize}px`)
+            newElement.setAttribute('value', answersString)
+            showcaseInner += `${newElement.outerHTML}${halves[i]}`;
+          }
+          document.getElementById("showcaseQuestion").innerHTML = `<h2>Showcase</h2><h3>${showcaseInner}</h3>`;
+        } else {
+          answersString = card.Answers[0].join(" or ")
+          document.getElementById("showcaseUserAnswer").setAttribute('value', answersString);
         }
       }
     }
@@ -872,7 +1047,7 @@
     function finishCard(indexOfCard)
     {
       card = elements[indexOfCard];
-      if(document.getElementById("modifyCardQuestion").value === "" || document.getElementById("modifyCardAnswer").value === "" || (document.getElementById("modifyMaxCount").getElementsByTagName('input')[0].value === "" && card.OtherOptions.length > 0))
+      if(document.getElementById("modifyCardQuestion").value === "" || (document.getElementById("modifyMaxCount").getElementsByTagName('input')[0].value === "" && card.OtherOptions.length > 0))
       {
         deleteCard(indexOfCard);
         alert("You did not put all the required info")
@@ -900,6 +1075,10 @@
     function removePossibility(indexOfCard, indexOfPossibility)
     {
       elements[indexOfCard].OtherOptions.splice(indexOfPossibility, 1);
+      if(elements[indexOfCard].OtherOptions.length == 0)
+      {
+        editAnswerFields(indexOfCard)
+      }
       selectCard(indexOfCard);
     }
     function addPossibility(indexOfCard)
@@ -926,13 +1105,13 @@
         {
           if(element.OtherOptions.length === 0)
           {
-            question = [element.Question, element.Answer];
+            question = [element.Question, element.Answers];
           } else {
-            question = [element.Question, element.Answer, element.OtherOptions, element.MaxOptions];
+            question = [element.Question, element.Answers, element.OtherOptions, element.MaxOptions];
           }
           questions.push(question);
         } else {
-          questions.push([element.Answer, element.Question]);
+          questions.push([element.Answers, element.Question]);
         }
       });
       return questions;
@@ -963,7 +1142,6 @@
       count = length - parseInt(document.getElementById("numberOfQuestions").value)
       for(i = 0; i < count; i++)
       {
-        console.log(i)
         shuffled.splice(Math.round(Math.random() * (shuffled.length - 1)), 1);
       }
       if(!ordered)
@@ -1012,23 +1190,29 @@
         } else {
           if(currentQuestion.includes("_____"))
           {
-            document.getElementById("userAnswer").classList.add("hidden"); 
-            halves = currentQuestion.split('_____', 2);
-            fontSize = parseInt(window.getComputedStyle(document.getElementById("userAnswer")).fontSize.split(0, 2))
-            newElement = document.getElementById("userAnswer").cloneNode(true);
+            document.getElementById("userAnswer0").classList.add("hidden"); 
+            halves = currentQuestion.split('_____');
+            fontSize = parseInt(window.getComputedStyle(document.getElementById("userAnswer0")).fontSize.split(0, 2))
+            innerQuestion = halves[0];
+            newElement = document.getElementById("userAnswer0").cloneNode(true);
             newElement.classList.remove("hidden")
-            newElement.setAttribute('style', `max-width: ${(currentAnswer.length + 2) * fontSize}px`)
-            inner = `<h3>${halves[0]}${newElement.outerHTML}${halves[1]}</h3>`;
+            for(i = 1; i < halves.length; i++)
+            {
+              newerElement = newElement.cloneNode(true);
+              newerElement.setAttribute('id', `userAnswer${i-1}`)
+              newerElement.setAttribute('style', `width: ${(currentAnswer[i-1][0].length + 2) * fontSize}px`)
+              innerQuestion += `${newerElement.outerHTML}${halves[i]}`;
+            }
+            inner = `<h3>${innerQuestion}</h3>`
           } else {
-            document.getElementById("userAnswer").classList.remove("hidden"); 
+            document.getElementById("userAnswer0").classList.remove("hidden"); 
             inner = `<h3>${currentQuestion}</h3>`;
-            console.log("here")
           }
           document.getElementById("answerInput").classList.remove("hidden"); 
           document.getElementById("question").innerHTML = inner;
           options = [];
           maxCount = 1;
-          document.getElementById("userAnswer").focus();
+          document.getElementById("userAnswer0").focus();
         }
       }
       else { 
@@ -1037,25 +1221,51 @@
       }
     }
     function submitAnswer() {
-      let input= maxCount == 1 ? document.getElementById("userAnswer").value.trim() : document.getElementById("multipleSelect").value.trim(), 
+      let input= maxCount == 1 ? document.getElementsByClassName('userAnswer') : [document.getElementById("multipleSelect")], 
       fb = document.getElementById("feedback");
       fb.classList.remove("hidden");
-      if(input===currentAnswer){ 
-        fb.innerHTML=`<div class="answer-feedback correct">Correct!</div>`;
-        if(currentType==="symbol")symbolsRight++; else namesRight++;
+      isCorrect = true;
+      for(i = 0; i < currentAnswer.length; i++)
+      {
+        isCorrect = currentAnswer[i].includes(input[i].value.trim()) && isCorrect;
+      }
+      if(isCorrect){ 
+          fb.innerHTML=`<div class="answer-feedback correct">Correct!</div>`;
+          symbolsRight++
+        }
+        else { 
+          correctAnswer = currentAnswer[0][0];
+          incorrectAnswer = input[0].value.trim();
+          for(i = 1; i < currentAnswer.length; i++)
+          {
+            correctAnswer += `, ${currentAnswer[i][0]}`
+          }
+          for(i = 1; i < input.length; i++)
+          {
+            incorrectAnswer += `, ${input[i].value.trim()}`
+          }
+          fb.innerHTML=`<div class="answer-feedback wrong">Wrong! Correct: <b>${correctAnswer}</b></div>`;
+          wrongAnswers.push({
+            question:currentQuestion,
+            answer:currentAnswer,
+            wrong:incorrectAnswer});
+        }
         setTimeout(()=>{
           fb.classList.add("hidden");
-          index++;
-          console.log(index)
-          updateProgress();
-          nextQuestion(currentType);
-        },1000);}
-      else { fb.innerHTML=`<div class="answer-feedback wrong">Wrong! Correct: <b>${currentAnswer}</b></div>`;
-        wrongAnswers.push({question:currentQuestion,answer:currentAnswer,wrong:input});
-        setTimeout(()=>{fb.classList.add("hidden");index++;updateProgress();nextQuestion(currentType);},2000);}
-      document.getElementById("userAnswer").value="";
+          index++;updateProgress();
+          nextQuestion(currentType);},
+          2000);
     }
-    function showFlashAnswer(){document.getElementById("flashWait").classList.add("hidden");document.getElementById("flashAnswer").classList.remove("hidden");document.getElementById("flashText").textContent=currentAnswer;}
+    function showFlashAnswer(){
+      document.getElementById("flashWait").classList.add("hidden");
+      document.getElementById("flashAnswer").classList.remove("hidden");
+      answerOut = currentAnswer[0][0];
+      for(i = 1; i < currentAnswer.length; i++)
+      {
+        answerOut += `, ${currentAnswer[i][0]}`
+      }
+      document.getElementById("flashText").textContent=answerOut;
+    }
     function nextFlash(){
       index++;
       updateProgress();
@@ -1085,7 +1295,7 @@
       document.getElementById("endTest").classList.add("hidden");
       document.getElementById("flashWait").classList.add("hidden");
       document.getElementById("flashAnswer").classList.add("hidden");
-      document.getElementById("userAnswer").classList.add("hidden");
+      document.getElementById("answerInput").classList.add("hidden");
       document.getElementById("multipleInput").classList.add("hidden");
     }
     // Init
